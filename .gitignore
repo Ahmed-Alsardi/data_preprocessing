@@ -168,3 +168,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .env
+/audio_preprocessing/S3DataProvider/testing_s3.py
