@@ -2,6 +2,7 @@ import boto3
 from dotenv import load_dotenv
 from pathlib import Path
 import os
+from typing import Generator
 
 load_dotenv()
 
@@ -32,11 +33,25 @@ class S3SubtitleProvider:
         self._subtitle_list: list[str] = self._get_subtitle_list()
         print(f"Total number of subtitles: {len(self._subtitle_list)}")
 
+    @property
+    def subtitle_list(self) -> list[str]:
+        return self._subtitle_list
+
+    def download_subtitles(self) -> Generator[Path, None, None]:
+        """
+        Generator that yields the path to the downloaded subtitle.
+        :return: List of paths to downloaded subtitles.
+        """
+        print("Downloading subtitles...")
+        for subtitle in self._subtitle_list:
+            self._bucket.download_file(subtitle, self._subtitle_download_path / subtitle.split('/')[-1])
+            yield self._subtitle_download_path / subtitle.split('/')[-1]
+
     def _get_subtitle_list(self, page_size=100) -> list[str]:
         subtitle_list: list[str] = []
         print("Retrieving subtitles...")
-        for i, page in enumerate(self._bucket.objects.filter(
-                Prefix=self._subtitle_prefix).page_size(page_size).pages()):
+        for page in self._bucket.objects.filter(
+                Prefix=self._subtitle_prefix).page_size(page_size).pages():
             [subtitle_list.append(o.key) for o in page]
             print(f"Retrieved {len(subtitle_list)} subtitles")
         return subtitle_list
@@ -45,4 +60,9 @@ class S3SubtitleProvider:
 if __name__ == '__main__':
     print('initiating S3SubtitleProvider...')
     s3 = S3SubtitleProvider(ACCESS_KEY, SECRET_KEY, SUBTITLE_PREFIX, SUBTITLE_DOWNLOAD_PATH)
-    print(f"First 3 subtitles: {s3._subtitle_list[:3]}")
+    print(f"First 3 subtitles: {s3.subtitle_list[:3]}")
+    print('Downloading subtitles...')
+    for i, subtitle_path in enumerate(s3.download_subtitles()):
+        if i == 5:
+            break
+        print(f"Downloaded subtitle {i}: {subtitle_path}")
