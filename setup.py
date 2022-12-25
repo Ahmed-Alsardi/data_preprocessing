@@ -1,9 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='audio_data_preprocessing',
+    name='data_preprocessing',
     version='0.0.01',
-    packages=['audio_preprocessing'],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     url='',
     license='',
     author='Ahmed Alsardi',
