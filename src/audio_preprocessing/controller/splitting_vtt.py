@@ -27,7 +27,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
         start = int(vtt[i].start_in_seconds * 1000)
         if i + step > len(vtt):
             difference = i + step - len(vtt)
-            end = int(vtt[i + difference].end_in_seconds * 1000)
+            end = int(vtt[i + difference - 1].end_in_seconds * 1000)
         else:
             end = int(vtt[i + step - 1].end_in_seconds * 1000)
         text = " ".join([caption.text for caption in vtt[i:i + step]])

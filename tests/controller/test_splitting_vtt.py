@@ -23,6 +23,14 @@ audio_segments = [
                      text=" ".join([str(i + 1) for i in range(10, 15)])),
         AudioSegment(start=60_240, end=75_860,
                      text=" ".join([str(i + 1) for i in range(15, 20)])),
+    ]),
+    (8, [
+        AudioSegment(start=15_740, end=41_760,
+                     text=" ".join([str(i + 1) for i in range(8)])),
+        AudioSegment(start=41_780, end=61_220,
+                     text=" ".join([str(i + 1) for i in range(8, 16)])),
+        AudioSegment(start=61_220, end=75_860,
+                     text=" ".join([str(i + 1) for i in range(16, 20)])),
     ])
 ]
 
