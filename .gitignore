@@ -172,3 +172,5 @@ cython_debug/
 /src/audio_preprocessing/S3DataProvider/subtitles/
 /src/audio_preprocessing/S3DataProvider/test*.*
 /src/audio_preprocessing/controller/test*.*
+/src/audio_preprocessing/db/test*.*
+.idea
