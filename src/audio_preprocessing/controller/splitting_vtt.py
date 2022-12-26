@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AudioSegment:
+class AudioSubSegment:
     """
     Class to represent an audio segment.
     start and end are in milliseconds.
@@ -22,7 +22,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
     :return: list of AudioSegment
     """
     vtt = webvtt.read(vtt_path)
-    segments: list[AudioSegment] = []
+    segments: list[AudioSubSegment] = []
     for i in range(0, len(vtt), step):
         start = int(vtt[i].start_in_seconds * 1000)
         if i + step > len(vtt):
@@ -31,7 +31,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
         else:
             end = int(vtt[i + step - 1].end_in_seconds * 1000)
         text = " ".join([caption.text for caption in vtt[i:i + step]])
-        segments.append(AudioSegment(start, end, text))
+        segments.append(AudioSubSegment(start, end, text))
     return segments
 
 
