@@ -1,6 +1,7 @@
 from pathlib import Path
 import webvtt
 from dataclasses import dataclass
+from typing import Generator, Callable
 
 
 @dataclass
@@ -14,7 +15,13 @@ class AudioSubSegment:
     text: str
 
 
-def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
+@dataclass
+class AudioSegments:
+    audio_id: str
+    audio_segments: list[AudioSubSegment]
+
+
+def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSubSegment]:
     """
     Split a vtt file into list of AudioSegment.
     :param vtt_path: Path to the vtt file.
@@ -33,6 +40,21 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
         text = " ".join([caption.text for caption in vtt[i:i + step]])
         segments.append(AudioSubSegment(start, end, text))
     return segments
+
+
+def splitter_generator(
+        subtitles_generator: Callable[[], Generator[Path, None, None]],
+        step: int = 4) -> Generator[AudioSegments, None, None]:
+    """
+    Loop through subtitles and extract the splitting
+    :param step: caption step
+    :param subtitles_generator: S3SubtitleProvider generate audio subtitle
+    :return: a generator of AudioSegments
+    """
+    for subtitle_path in subtitles_generator():
+        subtitle_name = subtitle_path.parts[-1].split(".")[0]
+        audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
+        yield AudioSegments(audio_id=subtitle_name, audio_segments=audio_segments)
 
 
 if __name__ == '__main__':
