@@ -5,7 +5,7 @@ from typing import Generator, Callable
 
 
 @dataclass
-class AudioSubSegment:
+class AudioSegment:
     """
     Class to represent an audio segment.
     start and end are in milliseconds.
@@ -16,12 +16,12 @@ class AudioSubSegment:
 
 
 @dataclass
-class AudioSegments:
+class Audio:
     audio_id: str
-    audio_segments: list[AudioSubSegment]
+    audio_segments: list[AudioSegment]
 
 
-def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSubSegment]:
+def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
     """
     Split a vtt file into list of AudioSegment.
     :param vtt_path: Path to the vtt file.
@@ -29,7 +29,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSubSegment]:
     :return: list of AudioSegment
     """
     vtt = webvtt.read(vtt_path)
-    segments: list[AudioSubSegment] = []
+    segments: list[AudioSegment] = []
     for i in range(0, len(vtt), step):
         start = int(vtt[i].start_in_seconds * 1000)
         if i + step > len(vtt):
@@ -38,13 +38,13 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSubSegment]:
         else:
             end = int(vtt[i + step - 1].end_in_seconds * 1000)
         text = " ".join([caption.text for caption in vtt[i:i + step]])
-        segments.append(AudioSubSegment(start, end, text))
+        segments.append(AudioSegment(start, end, text))
     return segments
 
 
 def splitter_generator(
         subtitles_generator: Callable[[], Generator[Path, None, None]],
-        step: int = 4) -> Generator[AudioSegments, None, None]:
+        step: int = 4) -> Generator[Audio, None, None]:
     """
     Loop through subtitles and extract the splitting
     :param step: caption step
@@ -54,7 +54,7 @@ def splitter_generator(
     for subtitle_path in subtitles_generator():
         subtitle_name = subtitle_path.parts[-1].split(".")[0]
         audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
-        yield AudioSegments(audio_id=subtitle_name, audio_segments=audio_segments)
+        yield Audio(audio_id=subtitle_name, audio_segments=audio_segments)
 
 
 if __name__ == '__main__':
