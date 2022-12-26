@@ -4,7 +4,8 @@ import pytest
 from pathlib import Path
 from audio_preprocessing.controller.splitting_vtt import (split_vtt,
                                                           AudioSegment,
-                                                          splitter_generator)
+                                                          splitter_generator,
+                                                          Audio)
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from beanie import Document, Indexed
 
 
-class AudioSubSegment(BaseModel):
+class AudioSegment(BaseModel):
     """
     Class to represent an audio segment.
     start and end are in milliseconds.
@@ -13,6 +13,6 @@ class AudioSubSegment(BaseModel):
     text: str
 
 
-class AudioSegments(Document):
+class AudioDocument(Document):
     audio_id: Indexed(str)
-    audio_segments: list[AudioSubSegment]
+    audio_segments: list[AudioSegment]

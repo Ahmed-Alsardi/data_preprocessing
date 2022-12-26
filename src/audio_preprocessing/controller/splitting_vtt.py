@@ -2,21 +2,14 @@ from pathlib import Path
 import webvtt
 from dataclasses import dataclass
 from typing import Generator, Callable
-
-
-@dataclass
-class AudioSegment:
-    """
-    Class to represent an audio segment.
-    start and end are in milliseconds.
-    """
-    start: int
-    end: int
-    text: str
+from audio_preprocessing.db.models import AudioSegment
 
 
 @dataclass
 class Audio:
+    """
+    Class to represent an audio. which will be converted to AudioDocument.
+    """
     audio_id: str
     audio_segments: list[AudioSegment]
 
@@ -38,7 +31,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
         else:
             end = int(vtt[i + step - 1].end_in_seconds * 1000)
         text = " ".join([caption.text for caption in vtt[i:i + step]])
-        segments.append(AudioSegment(start, end, text))
+        segments.append(AudioSegment(start=start, end=end, text=text))
     return segments
 
 
