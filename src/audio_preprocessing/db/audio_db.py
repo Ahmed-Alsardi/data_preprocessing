@@ -5,7 +5,7 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 from dataclasses import dataclass
 import logging
-from audio_preprocessing.db import models
+from audio_preprocessing.db.models import AudioDocument, DOCUMENT_LIST, AudioSegment
 from audio_preprocessing.services.splitting_vtt import Audio
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -34,16 +34,18 @@ async def connect_to_mongo(db_config: DBConfig, document_models: list):
     await init_beanie(database=client[db_config.db_name], document_models=document_models)
 
 
-def convert_audio_to_document(audio: Audio) -> models.AudioDocument:
+def convert_audio_to_document(audio: Audio) -> AudioDocument:
     """
     a helper function to convert an Audio object to an AudioDocument object
     :param audio:
     :return: AudioDocument object
     """
-    return models.AudioDocument(audio_id=audio.audio_id, audio_segments=audio.audio_segments)
+    return AudioDocument(audio_id=audio.audio_id,
+                         audio_segments=audio.audio_segments,
+                         audio_length=audio.audio_length)
 
 
-async def save_audio(audio: Audio | models.AudioDocument) -> None:
+async def save_audio(audio: Audio | AudioDocument) -> None:
     """
     Save an audio object to the database
     :param audio:
@@ -56,17 +58,14 @@ async def save_audio(audio: Audio | models.AudioDocument) -> None:
 
 async def main():
     """For testing purposes"""
-    db_config = DBConfig(username=MONGODB_USERNAME, password=MONGODB_PASSWORD, db_name="testing_db")
-    await connect_to_mongo(db_config=db_config, document_models=[models.AudioDocument])
-    sub_segment = models.AudioSegment(start=0, end=100, text="Hello world")
-    audio_segment = models.AudioDocument(audio_id="123", audio_segments=[sub_segment])
-    await audio_segment.save()
-    audio_segment = await models.AudioDocument.find_one(models.AudioDocument.audio_id == "123")
-    logging.info(audio_segment)
-    await audio_segment.set({models.AudioDocument.audio_id: "456"})
-    audio_segment = await models.AudioDocument.find_one(models.AudioDocument.audio_id == "456")
-    logging.info(audio_segment)
-    logging.info("Done")
+    db_config = DBConfig(username=MONGODB_USERNAME, password=MONGODB_PASSWORD, db_name="testing_db1")
+    await connect_to_mongo(db_config=db_config, document_models=DOCUMENT_LIST)
+    sub_segment = AudioSegment(start=0, end=100, text="Hello world")
+    audio_segment = AudioDocument(audio_id="123", audio_segments=[sub_segment], audio_length=100)
+    await save_audio(audio_segment)
+    logging.info("Audio was saved in db")
+    audio = await AudioDocument.find_one(AudioDocument.audio_id == "123")
+    logging.info(f"Audio {audio} was retrieved from db")
 
 
 if __name__ == '__main__':

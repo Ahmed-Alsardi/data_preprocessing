@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from audio_preprocessing.services.splitting_vtt import (split_vtt,
                                                         AudioSegment,
-                                                        splitter_generator)
+                                                        splitter_generator, calculate_audio_length)
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def path_generator() -> Generator[Path, None, None]:
     yield lambda: root_path.glob("*.vtt")
 
 
-audio_sub_segments = [
+audio_segments = [
     (10, [
         AudioSegment(start=15_740, end=46_340,
                      text=" ".join([str(i + 1) for i in range(10)])),
@@ -49,10 +49,8 @@ audio_sub_segments = [
     ])
 ]
 
-audio_segments = [(step, segments) for step, segments in audio_sub_segments]
 
-
-@pytest.mark.parametrize("step, segments", audio_sub_segments)
+@pytest.mark.parametrize("step, segments", audio_segments)
 def test_first_split_vtt(vtt_path, step, segments):
     assert vtt_path.exists(), "vtt file does not exist"
     vtt_segments = split_vtt(vtt_path, step=step)
@@ -68,3 +66,31 @@ def test_splitter_generator(path_generator: Callable[[], Generator[Path, None, N
         assert audio_segment.audio_id == "test", "audio id is not correct"
         assert len(audio_segment.audio_segments) == len(segments), "number of segments is not correct"
         assert audio_segment.audio_segments == segments, "segments are not correct"
+
+
+segments_length = [
+    (60.1, [
+        AudioSegment(start=15_740, end=41_760,
+                     text=" ".join([str(i + 1) for i in range(8)])),
+        AudioSegment(start=41_780, end=61_220,
+                     text=" ".join([str(i + 1) for i in range(8, 16)])),
+        AudioSegment(start=61_220, end=75_860,
+                     text=" ".join([str(i + 1) for i in range(16, 20)]))
+    ]),
+    (90.5, [
+        AudioSegment(start=1000, end=11_000, text="10"),
+        AudioSegment(start=15_000, end=25_000, text="10"),
+        AudioSegment(start=31_000, end=41_000, text="10"),
+        AudioSegment(start=52_000, end=62_000, text="10"),
+        AudioSegment(start=74_000, end=84_000, text="10"),
+        AudioSegment(start=99_000, end=109_000, text="10"),
+        AudioSegment(start=110_000, end=120_000, text="10"),
+        AudioSegment(start=120_000, end=130_500, text="10"),
+        AudioSegment(start=140_000, end=150_000, text="10"),
+    ])
+]
+
+
+@pytest.mark.parametrize("result, segments", segments_length)
+def test_calculate_audio_length(result, segments):
+    assert result == calculate_audio_length(segments)

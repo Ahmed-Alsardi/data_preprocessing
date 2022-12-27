@@ -170,4 +170,5 @@ cython_debug/
 .env
 /src/audio_preprocessing/s3_data_provider/subtitles/
 /src/audio_preprocessing/*/test*.*
+/src/audio_preprocessing/data/subtitles
 .idea

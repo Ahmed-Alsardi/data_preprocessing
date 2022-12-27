@@ -15,6 +15,7 @@ class Audio:
     """
     audio_id: str
     audio_segments: list[AudioSegment]
+    audio_length: float
 
 
 def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
@@ -38,6 +39,18 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
     return segments
 
 
+def calculate_audio_length(audio_segments: list[AudioSegment]) -> float:
+    """
+    Calculate the audio length in seconds.
+    :param audio_segments: list of AudioSegment
+    :return: length in seconds
+    """
+    total_length = 0
+    for segment in audio_segments:
+        total_length += segment.end - segment.start
+    return total_length / 1000
+
+
 def splitter_generator(
         subtitles_generator: Callable[[], Generator[Path, None, None]],
         step: int = 4) -> Generator[Audio, None, None]:
@@ -51,11 +64,12 @@ def splitter_generator(
         subtitle_name = subtitle_path.parts[-1].split(".")[0]
         try:
             audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
+            audio_length = calculate_audio_length(audio_segments)
         except Exception as e:
             logging.error(f"Error with filename: {subtitle_name}")
             logging.error(e)
             continue
-        yield Audio(audio_id=subtitle_name, audio_segments=audio_segments)
+        yield Audio(audio_id=subtitle_name, audio_segments=audio_segments, audio_length=audio_length)
 
 
 if __name__ == '__main__':
