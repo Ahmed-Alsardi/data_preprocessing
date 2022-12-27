@@ -4,9 +4,11 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from dotenv import load_dotenv
 from dataclasses import dataclass
-
+import logging
 from audio_preprocessing.db import models
 from audio_preprocessing.services.splitting_vtt import Audio
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 load_dotenv()
 
@@ -60,11 +62,11 @@ async def main():
     audio_segment = models.AudioDocument(audio_id="123", audio_segments=[sub_segment])
     await audio_segment.save()
     audio_segment = await models.AudioDocument.find_one(models.AudioDocument.audio_id == "123")
-    print(audio_segment)
+    logging.info(audio_segment)
     await audio_segment.set({models.AudioDocument.audio_id: "456"})
     audio_segment = await models.AudioDocument.find_one(models.AudioDocument.audio_id == "456")
-    print(audio_segment)
-    print("Done")
+    logging.info(audio_segment)
+    logging.info("Done")
 
 
 if __name__ == '__main__':

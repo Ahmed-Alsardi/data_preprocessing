@@ -16,3 +16,6 @@ class AudioSegment(BaseModel):
 class AudioDocument(Document):
     audio_id: Indexed(str)
     audio_segments: list[AudioSegment]
+
+
+DOCUMENT_LIST = [AudioDocument]

@@ -4,6 +4,9 @@ from pathlib import Path
 import os
 from typing import Generator
 from dataclasses import dataclass
+import logging
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 load_dotenv()
 
@@ -27,7 +30,7 @@ class S3SubtitleProvider:
         self._s3_config = s3_config
         self._subtitle_download_path = subtitle_download_path
         # Create a session
-        print('Accessing S3...')
+        logging.info('Accessing S3...')
         self._session: boto3.Session = boto3.Session(
             aws_access_key_id=self._s3_config.access_key,
             aws_secret_access_key=self._s3_config.secret_key,
@@ -37,7 +40,7 @@ class S3SubtitleProvider:
         self._bucket = self._s3.Bucket(self._s3_config.bucket_name)
         # Get the list of subtitles
         self._subtitle_list: list[str] = self._get_subtitle_list()
-        print(f"Total number of subtitles: {len(self._subtitle_list)}")
+        logging.info(f"Total number of subtitles: {len(self._subtitle_list)}")
 
     @property
     def subtitle_list(self) -> list[str]:
@@ -55,16 +58,16 @@ class S3SubtitleProvider:
 
     def _get_subtitle_list(self) -> list[str]:
         subtitle_list: list[str] = []
-        print("Retrieving subtitles...")
+        logging.info("Retrieving subtitles...")
         for page in self._bucket.objects.filter(
                 Prefix=self._s3_config.subtitle_prefix).pages():
             [subtitle_list.append(o.key) for o in page]
-            print(f"Retrieved {len(subtitle_list)} subtitles")
+            logging.info(f"Retrieved {len(subtitle_list)} subtitles")
         return subtitle_list
 
 
 if __name__ == '__main__':
-    print('initiating S3SubtitleProvider...')
+    logging.info('initiating S3SubtitleProvider...')
     s3_config = S3Config(
         access_key=ACCESS_KEY,
         secret_key=SECRET_KEY,
@@ -72,9 +75,9 @@ if __name__ == '__main__':
         bucket_name=BUCKET_NAME
     )
     s3 = S3SubtitleProvider(s3_config=s3_config, subtitle_download_path=SUBTITLE_DOWNLOAD_PATH)
-    print(f"First 3 subtitles: {s3.subtitle_list[:3]}")
-    print('Downloading subtitles...')
+    logging.info(f"First 3 subtitles: {s3.subtitle_list[:3]}")
+    logging.info('Downloading subtitles...')
     for i, subtitle_path in enumerate(s3.download_subtitles()):
         if i == 5:
             break
-        print(f"Downloaded subtitle {i}: {subtitle_path}")
+        logging.info(f"Downloaded subtitle {i}: {subtitle_path}")

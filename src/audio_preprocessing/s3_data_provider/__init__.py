@@ -1,1 +1,1 @@
-from .s3_provider import S3SubtitleProvider
+from .s3_provider import S3SubtitleProvider, S3Config
