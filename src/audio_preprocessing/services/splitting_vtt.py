@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 import webvtt
 from dataclasses import dataclass
 from typing import Generator, Callable
 from audio_preprocessing.db.models import AudioSegment
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 
 @dataclass
@@ -26,7 +29,7 @@ def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
     for i in range(0, len(vtt), step):
         start = int(vtt[i].start_in_seconds * 1000)
         if i + step > len(vtt):
-            difference = i + step - len(vtt)
+            difference = step - (i + step - len(vtt))
             end = int(vtt[i + difference - 1].end_in_seconds * 1000)
         else:
             end = int(vtt[i + step - 1].end_in_seconds * 1000)
@@ -41,18 +44,22 @@ def splitter_generator(
     """
     Loop through subtitles and extract the splitting
     :param step: caption step
-    :param subtitles_generator: S3SubtitleProvider generate audio subtitle
+    :param subtitles_generator: S3SubtitleProvider generate audio subtitles
     :return: a generator of AudioSegments
     """
     for subtitle_path in subtitles_generator():
         subtitle_name = subtitle_path.parts[-1].split(".")[0]
-        audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
+        try:
+            audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
+        except Exception as e:
+            logging.error(f"Error with filename: {subtitle_name}")
+            logging.error(e)
+            continue
         yield Audio(audio_id=subtitle_name, audio_segments=audio_segments)
 
 
 if __name__ == '__main__':
-    # file_path = Path.cwd().parent / "s3_data_provider" / "subtitles" / "-2vjWSEQF-Q.ar.vtt"
-    file_path = Path.cwd().parent.parent.parent / "tests" / "services" / "test_data" / "test.ar.vtt"
+    file_path = Path.cwd().parent / "data" / "subtitles" / "-0R1I26YwAE.ar.vtt"
     print(file_path.exists())
     if file_path.exists():
         segments = split_vtt(file_path, 10)

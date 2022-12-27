@@ -48,13 +48,14 @@ class S3SubtitleProvider:
 
     def download_subtitles(self) -> Generator[Path, None, None]:
         """
-        Generator that yields the path to the downloaded subtitle.
+        Generator that yields the path to the downloaded subtitles.
         :return: List of paths to downloaded subtitles.
         """
         print("Downloading subtitles...")
         for subtitle in self._subtitle_list:
-            self._bucket.download_file(subtitle, self._subtitle_download_path / subtitle.split('/')[-1])
-            yield self._subtitle_download_path / subtitle.split('/')[-1]
+            file_path = self._subtitle_download_path / subtitle.split('/')[-1]
+            self._bucket.download_file(subtitle, file_path)
+            yield file_path
 
     def _get_subtitle_list(self) -> list[str]:
         subtitle_list: list[str] = []
