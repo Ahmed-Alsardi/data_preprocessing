@@ -52,7 +52,7 @@ def splitter_generator(
 
 if __name__ == '__main__':
     # file_path = Path.cwd().parent / "S3DataProvider" / "subtitles" / "-2vjWSEQF-Q.ar.vtt"
-    file_path = Path.cwd().parent.parent.parent / "tests" / "controller" / "test_data" / "test.ar.vtt"
+    file_path = Path.cwd().parent.parent.parent / "tests" / "services" / "test_data" / "test.ar.vtt"
     print(file_path.exists())
     if file_path.exists():
         segments = split_vtt(file_path, 10)

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from dataclasses import dataclass
 
 from audio_preprocessing.db import models
-from audio_preprocessing.controller.splitting_vtt import Audio
+from audio_preprocessing.services.splitting_vtt import Audio
 
 load_dotenv()
 
@@ -36,7 +36,7 @@ def convert_audio_to_document(audio: Audio) -> models.AudioDocument:
     """
     a helper function to convert an Audio object to an AudioDocument object
     :param audio:
-    :return: AaudioDocument object
+    :return: AudioDocument object
     """
     return models.AudioDocument(audio_id=audio.audio_id, audio_segments=audio.audio_segments)
 

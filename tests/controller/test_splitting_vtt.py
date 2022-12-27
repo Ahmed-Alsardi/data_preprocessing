@@ -2,9 +2,9 @@ from typing import Generator, Callable
 
 import pytest
 from pathlib import Path
-from audio_preprocessing.controller.splitting_vtt import (split_vtt,
-                                                          AudioSegment,
-                                                          splitter_generator)
+from audio_preprocessing.services.splitting_vtt import (split_vtt,
+                                                        AudioSegment,
+                                                        splitter_generator)
 
 
 @pytest.fixture
