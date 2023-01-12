@@ -172,3 +172,4 @@ cython_debug/
 /src/audio_preprocessing/*/test*.*
 /src/audio_preprocessing/data/subtitles
 .idea
+data/
