@@ -2,7 +2,7 @@ from typing import Generator, Callable
 
 import pytest
 from pathlib import Path
-from audio_preprocessing.services.splitting_vtt import (split_vtt,
+from processing.services.splitting_vtt import (split_vtt,
                                                         AudioSegment,
                                                         splitter_generator, calculate_audio_length)
 

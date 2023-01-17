@@ -3,9 +3,9 @@ import asyncio
 from pathlib import Path
 import logging
 from dotenv import load_dotenv
-from audio_preprocessing.services import splitting_vtt
-from audio_preprocessing.db import models, audio_db
-from audio_preprocessing.s3_data_provider import S3SubtitleProvider, S3Config
+from processing.services import splitting_vtt
+from processing.db import models, audio_db
+from proceesing.s3_data_provider import S3SubtitleProvider, S3Config
 
 load_dotenv()
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

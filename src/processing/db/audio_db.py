@@ -5,8 +5,8 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 from dataclasses import dataclass
 import logging
-from audio_preprocessing.db.models import AudioDocument, DOCUMENT_LIST, AudioSegment
-from audio_preprocessing.services.splitting_vtt import Audio
+from processing.db.models import AudioDocument, DOCUMENT_LIST, AudioSegment
+from processing.services.splitting_vtt import Audio
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 

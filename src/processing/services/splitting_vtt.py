@@ -3,7 +3,7 @@ from pathlib import Path
 import webvtt
 from dataclasses import dataclass
 from typing import Generator, Callable
-from audio_preprocessing.db.models import AudioSegment
+from processing.db.models import AudioSegment
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
