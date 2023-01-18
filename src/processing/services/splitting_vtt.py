@@ -58,7 +58,6 @@ def v2_split_vtt(
     vtt_path: Path,
     max_length: int = 20_000,
     min_length: int = 10_000,
-    threshold: int = 1_000,
 ) -> list[AudioSegment]:
     """
     Split the vtt file into list of AudioSegment between min_length and max_length.
@@ -70,37 +69,27 @@ def v2_split_vtt(
     end = 0
     duration = 0
     file_duration = get_file_duration(vtt)
+    reset_variables = True
     print(f"get_file_duration: {file_duration}")
     for caption in vtt:
         caption_length = int((caption.end_in_seconds - caption.start_in_seconds) * 1000)
-        # check the different between last caption and current caption
-        if abs(end - caption.start_in_seconds * 1000) > threshold:
-            # if the duration is between min_length and max_length
-            # add the segment to the list and reset the variables
-            if min_length <= duration <= max_length:
-                segments.append(AudioSegment(start=start, end=end, text=text))
-                text = ""
-                # start in the new caption
-                start = caption.start_in_seconds * 1000
-                end = start
-                duration = 0
-            # if the duration is less than min_length
-            # add the current caption to the current segment
-            elif duration < min_length:
-                text += " " + caption.text
-                end = caption.end_in_seconds * 1000
-                duration += caption_length
-        if duration + caption_length < max_length:
-            text += " " + caption.text
-            end = caption.end_in_seconds * 1000
-            duration += caption_length
-            continue
-        else:
-            segments.append(AudioSegment(start=start, end=end, text=text))
+        if reset_variables:
             text = caption.text
-            start = caption.start_in_seconds * 1000
-            end = caption.end_in_seconds * 1000
+            start = int(caption.start_in_seconds * 1000)
+            end = int(caption.end_in_seconds * 1000)
             duration = caption_length
+            reset_variables = False
+            continue
+        if duration + caption_length < max_length:
+            # in case caption is longer <-
+            if duration < min_length:
+                text += " " + caption.text
+                duration += caption_length
+                end = int(caption.end_in_seconds * 1000)
+            else:
+                segments.append(AudioSegment(start=start, end=end, text=text))
+                reset_variables = True
+
     return segments
 
 
@@ -145,8 +134,11 @@ if __name__ == "__main__":
     file_path = Path.cwd().parent / "data" / "subtitles" / "-0R1I26YwAE.ar.vtt"
     print(file_path.exists())
     if file_path.exists():
-        segments = v2_split_vtt(file_path, 10)
-        for segment in segments:
-            print(segment)
+        segments = v2_split_vtt(file_path)
+        for i, segment in enumerate(segments):
+            print(f"segment {i} duration: {segment.end - segment.start}")
+            if i == 5:
+                break
     else:
         print("File not found")
+        print(Path.cwd())
