@@ -13,7 +13,7 @@ load_dotenv()
 ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
 SECRET_KEY = os.environ['AWS_SECRET_KEY']
 SUBTITLE_PREFIX = 'masc/clean_train/subtitles'
-SUBTITLE_DOWNLOAD_PATH = Path.cwd() / 'subtitles'
+SUBTITLE_DOWNLOAD_PATH = Path.cwd().parent / "data" / 'subtitles'
 BUCKET_NAME = "arabic-speech-data"
 
 

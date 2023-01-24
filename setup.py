@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='data_preprocessing',
-    version='0.0.01',
+    name='processing',
+    version='0.0.02',
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     url='',
