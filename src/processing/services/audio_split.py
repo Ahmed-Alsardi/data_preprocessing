@@ -19,8 +19,11 @@ def split_segment(
     start and end are in milliseconds.
     save the new audio file in output_dir.
     """
-    seg = audio[start:end]
-    seg.export(output_dir / filename, format="mp3")
+    try:
+        seg = audio[start:end]
+        seg.export(output_dir / filename, format="mp3")
+    except Exception as e:
+        logger.error("===== Errro with filename: %s, error messag: %s", filename, e)
 
 
 def split_audio(
