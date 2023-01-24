@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from processing.services import splitting_vtt
 from processing.db.audio_db import MongoDB, AudioCollection, DBConfig
 from processing.s3_data_provider import S3SubtitleProvider, S3Config
+from tqdm import tqdm
 
 load_dotenv()
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
@@ -53,9 +54,11 @@ def main():
     audio_db = initialize_db()
     logging.info("Connected to db. get %s collection.", TARGET_SET)
     audio_collection: AudioCollection = audio_db.get_collection(TARGET_SET)
-    for audio in splitting_vtt.splitter_generator(s3_provider.download_subtitles):
-        result = audio_collection.insert_one(audio)
-        logging.info(f"Audio {audio.audio_id} - {result.inserted_id} was saved in db")
+    for audio in tqdm(
+        splitting_vtt.splitter_generator(s3_provider.download_subtitles),
+        total=len(s3_provider.subtitle_list),
+    ):
+        audio_collection.insert_one(audio)
     logging.info("========= Done")
 
 
