@@ -13,7 +13,7 @@ logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 # S3 configuration
 AWS_ACCESS_KEY = os.environ["AWS_ACCESS_KEY"]
 AWS_SECRET_KEY = os.environ["AWS_SECRET_KEY"]
-TARGET_SET = "clean_train"
+TARGET_SET = "noisy_train"
 AWS_SUBTITLE_PREFIX = f"masc/{TARGET_SET}/subtitles"
 SUBTITLE_DOWNLOAD_PATH = Path(f"/mnt/volume_sfo3_01/data/{TARGET_SET}/subtitles")
 AWS_BUCKET_NAME = "arabic-speech-data"
@@ -58,6 +58,8 @@ def main():
         splitting_vtt.splitter_generator(s3_provider.download_subtitles),
         total=len(s3_provider.subtitle_list),
     ):
+        if audio.audio_length == 0:
+            continue
         audio_collection.insert_one(audio)
     logging.info("========= Done")
 

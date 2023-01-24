@@ -38,10 +38,13 @@ class AudioCollection:
         self.collection = collection
     
     def insert_one(self, audio: Audio) -> ObjectId:
+        # check if audio already exists
+        if docuemtn:= self.collection.find_one({"audio_id": audio.audio_id}):
+            return docuemtn["_id"]
         return self.collection.insert_one(audio.dict())
     
     def insert_many(self, audios: list[Audio]) -> list[ObjectId]:
-        return self.collection.insert_many([audio.dict() for audio in audios])
+        return [self.insert_one(audio) for audio in audios]
 
 
 class MongoDB:
