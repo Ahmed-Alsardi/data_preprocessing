@@ -2,13 +2,20 @@ import os
 from dotenv import load_dotenv
 from dataclasses import dataclass
 import logging
+from pymongo import MongoClient
+from pymongo.collection import Collection
+# mongo object id
+from bson.objectid import ObjectId
 
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+from processing.db.models import Audio
+
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 load_dotenv()
 
 MONGODB_USERNAME = os.getenv("MONGODB_USERNAME")
 MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
+MONGODB_HOST = os.getenv("MONGODB_HOST")
 
 
 @dataclass(kw_only=True)
@@ -22,5 +29,44 @@ class DBConfig:
 
     @property
     def uri(self):
-        return f"{self.protocol_name}://{self.username}:{self.password}@{self.host}:{self.port}"
+        return f"{self.protocol_name}://{self.username}:{self.password}@{self.host}/?retryWrites=true&w=majority"
 
+
+
+class AudioCollection:
+    def __init__(self, collection: Collection):
+        self.collection = collection
+    
+    def insert_one(self, audio: Audio) -> ObjectId:
+        return self.collection.insert_one(audio.dict())
+    
+    def insert_many(self, audios: list[Audio]) -> list[ObjectId]:
+        return self.collection.insert_many([audio.dict() for audio in audios])
+
+
+class MongoDB:
+    def __init__(self, config: DBConfig):
+        self.config = config
+        self.client = MongoClient(self.config.uri, serverSelectionTimeoutMS=5000)
+        self.db = self.client[self.config.db_name]
+
+    def get_collection(self, collection_name: str) -> AudioCollection :
+        return AudioCollection(collection=self.db[collection_name])
+
+    def get_all_collections(self) -> list[str]:
+        return self.db.list_collection_names()
+
+
+if __name__ == "__main__":
+    config = DBConfig(
+        username=MONGODB_USERNAME,
+        password=MONGODB_PASSWORD,
+        host=MONGODB_HOST,
+        db_name="test",
+    )
+    db = MongoDB(config)
+    try:
+        print(db.client.server_info())
+        print(type(db.get_collection("test")))
+    except Exception as e:
+        print(e)
