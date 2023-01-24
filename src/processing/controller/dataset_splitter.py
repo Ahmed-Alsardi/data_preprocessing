@@ -56,7 +56,6 @@ def main():
     for audio in splitting_vtt.splitter_generator(s3_provider.download_subtitles):
         result = audio_collection.insert_one(audio)
         logging.info(f"Audio {audio.audio_id} - {result.inserted_id} was saved in db")
-        break
     logging.info("========= Done")
 
 
