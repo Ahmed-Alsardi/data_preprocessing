@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Generator, Callable
+from typing import Generator, Callable, Optional
 import webvtt
 from processing.db.models import AudioSegment
 
@@ -54,10 +54,24 @@ def get_file_duration(vtt: webvtt.WebVTT) -> float:
     )
 
 
+def _reset_variables(caption: webvtt.Caption) -> tuple[str, int, int, int]:
+    """
+    Reset the variables.
+    :param caption: webvtt caption
+    :return: tuple of text, start, end
+    """
+    text = caption.text
+    start = int(caption.start_in_seconds * 1000)
+    end = int(caption.end_in_seconds * 1000)
+    duration = int((caption.end_in_seconds - caption.start_in_seconds) * 1000)
+    return text, start, end, duration
+
+
 def v2_split_vtt(
     vtt_path: Path,
-    max_length: int = 20_000,
-    min_length: int = 10_000,
+    max_length: int = 25_000,
+    min_length: int = 15_000,
+    threshold: int = 2_500,
 ) -> list[AudioSegment]:
     """
     Split the vtt file into list of AudioSegment between min_length and max_length.
@@ -69,26 +83,27 @@ def v2_split_vtt(
     end = 0
     duration = 0
     file_duration = get_file_duration(vtt)
-    reset_variables = True
     print(f"get_file_duration: {file_duration}")
     for caption in vtt:
         caption_length = int((caption.end_in_seconds - caption.start_in_seconds) * 1000)
-        if reset_variables:
-            text = caption.text
-            start = int(caption.start_in_seconds * 1000)
-            end = int(caption.end_in_seconds * 1000)
-            duration = caption_length
-            reset_variables = False
-            continue
         if duration + caption_length < max_length:
-            # in case caption is longer <-
-            if duration < min_length:
+            # check the threshold before adding the caption
+            # if there is big silence between the captions
+            # check if the duration is bigger than the min_length
+            # if it is, add the segment to the list and reset the variables
+            # if not, disacrd the current segment and reset the variables
+            if end + threshold > int(caption.start_in_seconds * 1000):
                 text += " " + caption.text
                 duration += caption_length
                 end = int(caption.end_in_seconds * 1000)
-            else:
+            elif duration > min_length:
                 segments.append(AudioSegment(start=start, end=end, text=text))
-                reset_variables = True
+                text, start, end, duration = _reset_variables(caption)
+            else:
+                text, start, end, duration = _reset_variables(caption)
+        else:
+            segments.append(AudioSegment(start=start, end=end, text=text))
+            text, start, end, duration = _reset_variables(caption)
 
     return segments
 
@@ -131,14 +146,18 @@ def splitter_generator(
 
 
 if __name__ == "__main__":
-    file_path = Path.cwd().parent / "data" / "subtitles" / "-0R1I26YwAE.ar.vtt"
+    file_path = Path.cwd().parent / "data" / "subtitles"
     print(file_path.exists())
     if file_path.exists():
-        segments = v2_split_vtt(file_path)
-        for i, segment in enumerate(segments):
-            print(f"segment {i} duration: {segment.end - segment.start}")
-            if i == 5:
-                break
+        for file in file_path.glob("*"):
+            print(file)
+            segments = v2_split_vtt(file)
+            total = 0
+            for i, segment in enumerate(segments):
+                print(f"segment {i} duration: {segment.end - segment.start}")
+                total += segment.end - segment.start
+            print(f"total: {total}")
+            print("=" * 30)
     else:
         print("File not found")
         print(Path.cwd())
