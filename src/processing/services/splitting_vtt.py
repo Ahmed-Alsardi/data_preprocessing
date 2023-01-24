@@ -50,7 +50,6 @@ def split_vtt(
     end = 0
     duration = 0
     file_duration = get_file_duration(vtt)
-    print(f"get_file_duration: {file_duration}")
     for caption in vtt:
         caption_length = int((caption.end_in_seconds - caption.start_in_seconds) * 1000)
         if duration + caption_length < max_length:
@@ -88,7 +87,7 @@ def calculate_audio_length(audio_segments: list[AudioSegment]) -> float:
 
 
 def splitter_generator(
-    subtitles_generator: Callable[[], Generator[Path, None, None]], step: int = 4
+    subtitles_generator: Callable[[], Generator[Path, None, None]]
 ) -> Generator[Audio, None, None]:
     """
     Loop through subtitles and extract the splitting
@@ -99,7 +98,7 @@ def splitter_generator(
     for subtitle_path in subtitles_generator():
         subtitle_name = subtitle_path.parts[-1].split(".")[0]
         try:
-            audio_segments = split_vtt(vtt_path=subtitle_path, step=step)
+            audio_segments = split_vtt(vtt_path=subtitle_path)
             audio_length = calculate_audio_length(audio_segments)
         except Exception as splitter_exception:
             logging.error("Error with filename: %s", subtitle_name)
