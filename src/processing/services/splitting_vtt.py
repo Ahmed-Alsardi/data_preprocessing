@@ -1,43 +1,10 @@
 import logging
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Generator, Callable, Optional
+from typing import Generator, Callable
 import webvtt
-from processing.db.models import AudioSegment
+from processing.db.models import AudioSegment, Audio
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
-
-
-@dataclass
-class Audio:
-    """
-    Class to represent an audio. which will be converted to AudioDocument.
-    """
-
-    audio_id: str
-    audio_segments: list[AudioSegment]
-    audio_length: float
-
-
-def split_vtt(vtt_path: Path, step: int = 3) -> list[AudioSegment]:
-    """
-    Split a vtt file into list of AudioSegment.
-    :param vtt_path: Path to the vtt file.
-    :param step: caption step
-    :return: list of AudioSegment
-    """
-    vtt = webvtt.read(vtt_path)
-    segments: list[AudioSegment] = []
-    for i in range(0, len(vtt), step):
-        start = int(vtt[i].start_in_seconds * 1000)
-        if i + step > len(vtt):
-            difference = step - (i + step - len(vtt))
-            end = int(vtt[i + difference - 1].end_in_seconds * 1000)
-        else:
-            end = int(vtt[i + step - 1].end_in_seconds * 1000)
-        text = " ".join([caption.text for caption in vtt[i : i + step]])
-        segments.append(AudioSegment(start=start, end=end, text=text))
-    return segments
 
 
 def get_file_duration(vtt: webvtt.WebVTT) -> float:
@@ -67,7 +34,7 @@ def _reset_variables(caption: webvtt.Caption) -> tuple[str, int, int, int]:
     return text, start, end, duration
 
 
-def v2_split_vtt(
+def split_vtt(
     vtt_path: Path,
     max_length: int = 25_000,
     min_length: int = 15_000,
@@ -151,7 +118,7 @@ if __name__ == "__main__":
     if file_path.exists():
         for file in file_path.glob("*"):
             print(file)
-            segments = v2_split_vtt(file)
+            segments = split_vtt(file)
             total = 0
             for i, segment in enumerate(segments):
                 print(f"segment {i} duration: {segment.end - segment.start}")

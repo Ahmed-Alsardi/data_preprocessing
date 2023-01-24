@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 from typing import Optional
 from pydantic import BaseModel
-from beanie import Document, Indexed
+
 
 
 class AudioSegment(BaseModel):
@@ -13,10 +14,12 @@ class AudioSegment(BaseModel):
     text: str
 
 
-class AudioDocument(Document):
-    audio_id: Indexed(str)
+
+@dataclass
+class Audio:
+    """
+    Class to represent an audio. which will be converted to AudioDocument.
+    """
+    audio_id: str
     audio_segments: list[AudioSegment]
     audio_length: float
-
-
-DOCUMENT_LIST = [AudioDocument]

@@ -7,7 +7,7 @@ from processing.services.splitting_vtt import (
     AudioSegment,
     splitter_generator,
     calculate_audio_length,
-    v2_split_vtt,
+    split_vtt,
 )
 
 
@@ -149,7 +149,7 @@ def test_calculate_audio_length(result, segments):
 
 
 def test_v2_split(vtt_path: Path):
-    vtt_segments = v2_split_vtt(
+    vtt_segments = split_vtt(
         vtt_path, max_length=20_000, min_length=10_000, threshold=1000
     )
     for segment in vtt_segments:
