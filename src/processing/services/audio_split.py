@@ -33,7 +33,10 @@ def split_audio(
     Split audio file into multiple audio files.
     save the new audio files in output_dir.
     """
-    audio = AudioSegment.from_wav(audio_path / f"{audio_meta.audio_id}.wav")
+    if audio_path.is_dir():
+        audio = AudioSegment.from_wav(audio_path / f"{audio_meta.audio_id}.wav")
+    else:
+        audio = AudioSegment.from_wav(audio_path)
     for i, segment in enumerate(audio_meta.audio_segments):
         filename = f"{audio_meta.audio_id}_{i}.{extension}"
         split_segment(
