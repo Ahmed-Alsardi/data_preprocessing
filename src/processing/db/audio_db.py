@@ -47,7 +47,7 @@ class AudioCollection:
         return [self.insert_one(audio) for audio in audios]
 
     def find_all(self) -> list[Audio]:
-        return [Audio.from_dict(audio) for audio in self.collection.find()]
+        return [Audio.from_dict(audio) for audio in self.collection.find
 
 
 class MongoDB:
