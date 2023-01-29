@@ -13,9 +13,19 @@ class AudioSegment:
     start: int
     end: int
     text: str
+    filename: str
 
     def dict(self) -> dict:
-        return {"start": self.start, "end": self.end, "text": self.text}
+        return {
+            "start": self.start,
+            "end": self.end,
+            "text": self.text,
+            "filename": self.filename,
+        }
+
+    @property
+    def duration(self) -> float:
+        return round((self.end - self.start) / 1000, 3)
 
 
 @dataclass
@@ -35,7 +45,7 @@ class Audio:
             "audio_length": self.audio_length,
             "audio_segments": [segment.dict() for segment in self.audio_segments],
         }
-    
+
     @staticmethod
     def from_dict(data: dict):
         return Audio(
@@ -46,4 +56,3 @@ class Audio:
                 AudioSegment(**segment) for segment in data.get("audio_segments")
             ],
         )
-

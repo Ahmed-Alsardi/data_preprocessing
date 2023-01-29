@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging
+from typing import Generator
 from pydub import AudioSegment
 from processing.db.models import Audio, AudioSegment as AudioSegmentModel
 
@@ -28,7 +29,7 @@ def split_segment(
 
 def split_audio(
     audio_path: Path, audio_meta: Audio, output_dir: Path, extension: str = "mp3"
-) -> None:
+) -> Generator[str, None, None]:
     """
     Split audio file into multiple audio files.
     save the new audio files in output_dir.
@@ -37,8 +38,8 @@ def split_audio(
         audio = AudioSegment.from_wav(audio_path / f"{audio_meta.audio_id}.wav")
     else:
         audio = AudioSegment.from_wav(audio_path)
-    for i, segment in enumerate(audio_meta.audio_segments):
-        filename = f"{audio_meta.audio_id}_{i}.{extension}"
+    for segment in audio_meta.audio_segments:
+        filename = f"{segment.filename}.{extension}"
         split_segment(
             audio=audio,
             start=segment.start,
@@ -46,6 +47,7 @@ def split_audio(
             filename=filename,
             output_dir=output_dir,
         )
+        yield segment
 
 
 if __name__ == "__main__":

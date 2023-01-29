@@ -45,11 +45,11 @@ def split_vtt(
     """
     segments: list[AudioSegment] = []
     vtt = webvtt.read(vtt_path)
+    filename = vtt_path.parts[-1].split(".")[0]
     text = ""
     start = 0
     end = 0
     duration = 0
-    file_duration = get_file_duration(vtt)
     for caption in vtt:
         caption_length = int((caption.end_in_seconds - caption.start_in_seconds) * 1000)
         if duration + caption_length < max_length:
@@ -63,12 +63,12 @@ def split_vtt(
                 duration += caption_length
                 end = int(caption.end_in_seconds * 1000)
             elif duration > min_length:
-                segments.append(AudioSegment(start=start, end=end, text=text))
+                segments.append(AudioSegment(start=start, end=end, text=text, filename=f"{filename}_{len(segments)}"))
                 text, start, end, duration = _reset_variables(caption)
             else:
                 text, start, end, duration = _reset_variables(caption)
         else:
-            segments.append(AudioSegment(start=start, end=end, text=text))
+            segments.append(AudioSegment(start=start, end=end, text=text, filename=f"{filename}_{len(segments)}"))
             text, start, end, duration = _reset_variables(caption)
 
     return segments
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             segments = split_vtt(file)
             total = 0
             for i, segment in enumerate(segments):
-                print(f"segment {i} duration: {segment.end - segment.start}")
+                print(f"segment {i} duration: {segment.end - segment.start}\tfilename: {segment.filename}")
                 total += segment.end - segment.start
             print(f"total: {total}")
             print("=" * 30)
