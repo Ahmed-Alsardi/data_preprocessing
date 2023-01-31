@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
-from pydantic import BaseModel
+from maha.cleaners.functions import normalize, keep
+from pprint import pprint
 
 
 @dataclass
@@ -14,6 +15,7 @@ class AudioSegment:
     end: int
     text: str
     filename: str
+    _id: Optional[str] = None
 
     def dict(self) -> dict:
         return {
@@ -21,6 +23,7 @@ class AudioSegment:
             "end": self.end,
             "text": self.text,
             "filename": self.filename,
+            "_id": self._id,
         }
 
     @property
@@ -29,15 +32,43 @@ class AudioSegment:
 
 
 @dataclass
+class MASCAudio:
+
+    filename: str
+    text: str
+    duration: float
+    _id: Optional[str] = None
+
+    def __post_init__(self):
+        self.text = normalize(self.text, alef=True)
+        self.text = keep(self.text, arabic_letters=True)
+
+    @staticmethod
+    def from_audio_segment(audio_segment: AudioSegment):
+        return MASCAudio(
+            filename=audio_segment.filename,
+            text=audio_segment.text,
+            duration=audio_segment.duration,
+        )
+
+    def dict(self):
+        return {
+            "filename": self.filename,
+            "text": self.text,
+            "duration": self.duration,
+        }
+
+
+@dataclass
 class Audio:
     """
     Class to represent an audio. which will be converted to AudioDocument.
     """
 
-    _id: Optional[str]
     audio_id: str
-    audio_segments: list[AudioSegment]
     audio_length: float
+    audio_segments: list[AudioSegment]
+    _id: Optional[str] = None
 
     def dict(self):
         return {

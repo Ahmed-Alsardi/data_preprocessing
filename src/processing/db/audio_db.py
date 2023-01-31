@@ -1,14 +1,16 @@
 import os
+from typing import Union
 from dotenv import load_dotenv
 from dataclasses import dataclass
 import logging
 from pymongo import MongoClient
+import pymongo
 from pymongo.collection import Collection
 
 # mongo object id
 from bson.objectid import ObjectId
 
-from processing.db.models import Audio
+from processing.db.models import Audio, AudioSegment
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
@@ -34,20 +36,19 @@ class DBConfig:
 
 
 class AudioCollection:
+    """Audio collection wrapper class"""
+
     def __init__(self, collection: Collection):
         self.collection = collection
 
-    def insert_one(self, audio: Audio) -> ObjectId:
-        # check if audio already exists
-        if docuemtn := self.collection.find_one({"audio_id": audio.audio_id}):
-            return docuemtn["_id"]
-        return self.collection.insert_one(audio.dict())
+    def insert_one(self, audio: dict) -> ObjectId:
+        return self.collection.insert_one(audio)
 
-    def insert_many(self, audios: list[Audio]) -> list[ObjectId]:
-        return [self.insert_one(audio) for audio in audios]
+    def insert_many(self, audios: list[dict]) -> list[ObjectId]:
+        return self.collection.insert_many(audios)
 
-    def find_all(self) -> list[Audio]:
-        return [Audio.from_dict(audio) for audio in self.collection.find()]
+    def find_all(self):
+        return self.collection.find()
 
 
 class MongoDB:
