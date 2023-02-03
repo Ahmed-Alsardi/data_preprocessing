@@ -15,10 +15,10 @@ logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 load_dotenv()
 
 
-TARGET_SET = "clean_train"
-AUDIO_COLLECTION_NAME = "masc_audio"
+TARGET_SET = "clean_dev"
+AUDIO_COLLECTION_NAME = "masc_clean_dev"
 ROOT_DOWNLOAD_PATH = Path(f"/mnt/volume_sfo3_01/data/{TARGET_SET}")
-AUDIO_DOWNLOAD_PATH = Path("../data") / "audios"
+AUDIO_DOWNLOAD_PATH = Path("../data/clean_val/audios")
 AUDIO_SEGMENT_DOWNLOAD_PATH = ROOT_DOWNLOAD_PATH / "audio_segments"
 
 # DB configuration
