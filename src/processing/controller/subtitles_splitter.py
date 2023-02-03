@@ -29,7 +29,7 @@ def get_s3_provider() -> S3SubtitleProvider:
     s3_config = S3Config(
         access_key=AWS_ACCESS_KEY,
         secret_key=AWS_SECRET_KEY,
-        subtitle_prefix=AWS_SUBTITLE_PREFIX,
+        folder_prefix=AWS_SUBTITLE_PREFIX,
         bucket_name=AWS_BUCKET_NAME,
     )
     return S3SubtitleProvider(

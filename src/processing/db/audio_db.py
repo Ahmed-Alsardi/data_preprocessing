@@ -1,13 +1,16 @@
 import os
+from typing import Union
 from dotenv import load_dotenv
 from dataclasses import dataclass
 import logging
 from pymongo import MongoClient
+import pymongo
 from pymongo.collection import Collection
+
 # mongo object id
 from bson.objectid import ObjectId
 
-from processing.db.models import Audio
+from processing.db.models import Audio, AudioSegment
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
@@ -32,19 +35,20 @@ class DBConfig:
         return f"{self.protocol_name}://{self.username}:{self.password}@{self.host}/?retryWrites=true&w=majority"
 
 
-
 class AudioCollection:
+    """Audio collection wrapper class"""
+
     def __init__(self, collection: Collection):
         self.collection = collection
-    
-    def insert_one(self, audio: Audio) -> ObjectId:
-        # check if audio already exists
-        if docuemtn:= self.collection.find_one({"audio_id": audio.audio_id}):
-            return docuemtn["_id"]
-        return self.collection.insert_one(audio.dict())
-    
-    def insert_many(self, audios: list[Audio]) -> list[ObjectId]:
-        return [self.insert_one(audio) for audio in audios]
+
+    def insert_one(self, audio: dict) -> ObjectId:
+        return self.collection.insert_one(audio)
+
+    def insert_many(self, audios: list[dict]) -> list[ObjectId]:
+        return self.collection.insert_many(audios)
+
+    def find_all(self):
+        return self.collection.find()
 
 
 class MongoDB:
@@ -53,7 +57,7 @@ class MongoDB:
         self.client = MongoClient(self.config.uri, serverSelectionTimeoutMS=5000)
         self.db = self.client[self.config.db_name]
 
-    def get_collection(self, collection_name: str) -> AudioCollection :
+    def get_collection(self, collection_name: str) -> AudioCollection:
         return AudioCollection(collection=self.db[collection_name])
 
     def get_all_collections(self) -> list[str]:
@@ -65,11 +69,12 @@ if __name__ == "__main__":
         username=MONGODB_USERNAME,
         password=MONGODB_PASSWORD,
         host=MONGODB_HOST,
-        db_name="test",
+        db_name="masc",
     )
     db = MongoDB(config)
     try:
-        print(db.client.server_info())
-        print(type(db.get_collection("test")))
+        for a in db.get_collection("clean_train").find_all():
+            print(a)
+            break
     except Exception as e:
         print(e)
