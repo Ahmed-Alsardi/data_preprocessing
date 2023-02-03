@@ -13,7 +13,7 @@ logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 # S3 configuration
 AWS_ACCESS_KEY = os.environ["AWS_ACCESS_KEY"]
 AWS_SECRET_KEY = os.environ["AWS_SECRET_KEY"]
-TARGET_SET = "noisy_train"
+TARGET_SET = "clean_dev"
 AWS_SUBTITLE_PREFIX = f"masc/{TARGET_SET}/subtitles"
 SUBTITLE_DOWNLOAD_PATH = Path(f"/mnt/volume_sfo3_01/data/{TARGET_SET}/subtitles")
 AWS_BUCKET_NAME = "arabic-speech-data"
@@ -48,6 +48,7 @@ def initialize_db() -> MongoDB:
 
 
 def main():
+    logging.info("USING %s SET!!!", TARGET_SET)
     s3_provider: S3SubtitleProvider = get_s3_provider()
     logging.info("Connected to S3 Provider")
     logging.info("Trying to connect to db")
@@ -60,7 +61,7 @@ def main():
     ):
         if audio.audio_length == 0:
             continue
-        audio_collection.insert_one(audio)
+        audio_collection.insert_one(audio.dict())
     logging.info("========= Done")
 
 
