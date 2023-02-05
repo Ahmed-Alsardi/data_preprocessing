@@ -36,8 +36,8 @@ def _reset_variables(caption: webvtt.Caption) -> tuple[str, int, int, int]:
 
 def split_vtt(
     vtt_path: Path,
-    max_length: int = 25_000,
-    min_length: int = 15_000,
+    max_length: int = 12_000,
+    min_length: int = 5_000,
     threshold: int = 2_500,
 ) -> list[AudioSegment]:
     """
@@ -63,12 +63,26 @@ def split_vtt(
                 duration += caption_length
                 end = int(caption.end_in_seconds * 1000)
             elif duration > min_length:
-                segments.append(AudioSegment(start=start, end=end, text=text, filename=f"{filename}_{len(segments)}"))
+                segments.append(
+                    AudioSegment(
+                        start=start,
+                        end=end,
+                        text=text,
+                        filename=f"{filename}_{len(segments)}",
+                    )
+                )
                 text, start, end, duration = _reset_variables(caption)
             else:
                 text, start, end, duration = _reset_variables(caption)
         else:
-            segments.append(AudioSegment(start=start, end=end, text=text, filename=f"{filename}_{len(segments)}"))
+            segments.append(
+                AudioSegment(
+                    start=start,
+                    end=end,
+                    text=text,
+                    filename=f"{filename}_{len(segments)}",
+                )
+            )
             text, start, end, duration = _reset_variables(caption)
 
     return segments
@@ -80,14 +94,14 @@ def calculate_audio_length(audio_segments: list[AudioSegment]) -> float:
     :param audio_segments: list of AudioSegment
     :return: length in seconds
     """
-    total_length = 0
-    for segment in audio_segments:
-        total_length += segment.end - segment.start
-    return total_length / 1000
+    total = [segment.end - segment.start for segment in audio_segments]
+    return sum(total) / 1000
 
 
 def splitter_generator(
-    subtitles_generator: Callable[[], Generator[Path, None, None]]
+    subtitles_generator: Callable[[], Generator[Path, None, None]],
+    min_length: int = 5_000,
+    max_length: int = 15_000,
 ) -> Generator[Audio, None, None]:
     """
     Loop through subtitles and extract the splitting
@@ -98,7 +112,9 @@ def splitter_generator(
     for subtitle_path in subtitles_generator():
         subtitle_name = subtitle_path.parts[-1].split(".")[0]
         try:
-            audio_segments = split_vtt(vtt_path=subtitle_path)
+            audio_segments = split_vtt(
+                vtt_path=subtitle_path, min_length=min_length, max_length=max_length
+            )
             audio_length = calculate_audio_length(audio_segments)
         except Exception as splitter_exception:
             logging.error("Error with filename: %s", subtitle_name)
@@ -120,7 +136,9 @@ if __name__ == "__main__":
             segments = split_vtt(file)
             total = 0
             for i, segment in enumerate(segments):
-                print(f"segment {i} duration: {segment.end - segment.start}\tfilename: {segment.filename}")
+                print(
+                    f"segment {i} duration: {segment.end - segment.start}\tfilename: {segment.filename}"
+                )
                 total += segment.end - segment.start
             print(f"total: {total}")
             print("=" * 30)

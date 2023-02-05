@@ -47,7 +47,13 @@ def initialize_db() -> MongoDB:
     return MongoDB(config)
 
 
+def initialize_dirs():
+    if not SUBTITLE_DOWNLOAD_PATH.exists():
+        SUBTITLE_DOWNLOAD_PATH.mkdir(parents=True)
+
+
 def main():
+    initialize_dirs()
     logging.info("USING %s SET!!!", TARGET_SET)
     s3_provider: S3SubtitleProvider = get_s3_provider()
     logging.info("Connected to S3 Provider")
