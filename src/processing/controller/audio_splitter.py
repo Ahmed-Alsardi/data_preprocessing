@@ -16,9 +16,9 @@ load_dotenv()
 
 
 TARGET_SET = "clean_dev"
-AUDIO_COLLECTION_NAME = "masc_clean_dev"
+AUDIO_COLLECTION_NAME = f"{TARGET_SET}_audio"
 ROOT_DOWNLOAD_PATH = Path(f"/mnt/volume_sfo3_01/data/{TARGET_SET}")
-AUDIO_DOWNLOAD_PATH = Path("../data/clean_val/audios")
+AUDIO_DOWNLOAD_PATH = Path(f"../data/{TARGET_SET}/audios")
 AUDIO_SEGMENT_DOWNLOAD_PATH = ROOT_DOWNLOAD_PATH / "audio_segments"
 
 # DB configuration
@@ -49,11 +49,19 @@ def process_audio(audio: Audio):
 
 
 def insert_audio_segments(audio: Audio, target_audio_collection: AudioCollection):
-    masc_audios = [MASCAudio.from_audio_segment(segment).dict() for segment in audio.audio_segments]
+    masc_audios = [
+        MASCAudio.from_audio_segment(segment).dict() for segment in audio.audio_segments
+    ]
     target_audio_collection.insert_many(masc_audios)
 
 
+def initialize_dirs():
+    if not AUDIO_SEGMENT_DOWNLOAD_PATH.exists():
+        AUDIO_SEGMENT_DOWNLOAD_PATH.mkdir(parents=True)
+
+
 def main():
+    initialize_dirs()
     logging.info("Trying to connect to db.")
     audio_db = initialize_db()
     source_audio_collection = audio_db.get_collection(TARGET_SET)
@@ -62,9 +70,9 @@ def main():
         Audio.from_dict(audio) for audio in source_audio_collection.find_all()
     ]
     # run multi-threaded for prcoessing audio
-    # print(f"Total number of cpus: {cpu_count()}")
-    # with Pool(cpu_count()) as p:
-    #     list(tqdm(p.imap(process_audio,all_audios), total=len(all_audios)))
+    print(f"Total number of cpus: {cpu_count()}")
+    with Pool(cpu_count()) as p:
+        list(tqdm(p.imap(process_audio, all_audios), total=len(all_audios)))
     # insert audio segments to db
     for audio in tqdm(all_audios, total=len(all_audios)):
         insert_audio_segments(audio, target_audio_collection)
