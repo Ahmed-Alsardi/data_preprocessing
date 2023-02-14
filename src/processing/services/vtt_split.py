@@ -51,9 +51,19 @@ def vtt_split(
             # current caption can be added to the segment
             current_segment.end = caption.end_in_seconds
             current_segment.text = f"{current_segment.text} {caption.text}"
-        else:
+        elif current_segment.duration >= min_duration:
             # current caption cannot be added to the segment
             segments.append(current_segment)
+            current_segment = AudioSegment(
+                start=caption.start_in_seconds,
+                end=caption.end_in_seconds,
+                text=caption.text,
+                source=source,
+                filename=f"{filename}_{len(segments)}",
+            )
+        else:
+            # current caption cannot be added to the segment bc it's big and current segment is too short
+            # skip the current caption and start a new segment
             current_segment = AudioSegment(
                 start=caption.start_in_seconds,
                 end=caption.end_in_seconds,
@@ -91,26 +101,26 @@ def folder_vtt_split(
     Returns:
         list of Audio objects
     """
-    # audios = tqdm([
-    #     vtt_split(
-    #         vtt_path=vtt_path,
-    #         min_duration=min_duration,
-    #         max_duration=max_duration,
-    #         threshold=threshold,
-    #         source=source,
-    #     )
-    #     for vtt_path in vtt_folder.glob("*")
-    #     if vtt_path.suffix == ".vtt"
-    # ], desc="Splitting vtt files into segments", total=len(list(vtt_folder.glob("*")))
     audios = []
-    for vtt_path in tqdm(vtt_folder.glob("*"), desc="Splitting vtt files into segments", total=len(list(vtt_folder.glob("*")))):
+    for vtt_path in tqdm(
+        vtt_folder.glob("*"),
+        desc="Splitting vtt files into segments",
+        total=len(list(vtt_folder.glob("*"))),
+    ):
         if vtt_path.suffix == ".vtt":
-            audios.append(vtt_split(
-                vtt_path=vtt_path,
-                min_duration=min_duration,
-                max_duration=max_duration,
-                threshold=threshold,
-                source=source,
-            ))
+            audios.append(
+                vtt_split(
+                    vtt_path=vtt_path,
+                    min_duration=min_duration,
+                    max_duration=max_duration,
+                    threshold=threshold,
+                    source=source,
+                )
+            )
 
     return audios
+
+
+if __name__ == "__main__":
+    vtt_path = Path("/root/datasets/masc/train/subtitles/frrRoqxg67k.ar.vtt")
+    audio = vtt_split(vtt_path=vtt_path)
