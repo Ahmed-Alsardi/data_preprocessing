@@ -26,9 +26,11 @@ class AudioSegment:
     
     def to_dict(self):
         return dict(
-            filename=self.filename,
-            text=self.text,
-            duration=self.duration,
+            segment_filename=self.filename,
+            segment_text=self.text,
+            segment_start=self.start,
+            segment_end=self.end,
+            segment_duration=self.duration,
             source=self.source.value,
         )
 
