@@ -1,8 +1,13 @@
 from pathlib import Path
+import logging
 import pandas as pd
-import webvtt
-from processing.config import Audio, AudioSegment, SourceEnum
+from processing.config import Audio, SourceEnum
 from processing.services import folder_vtt_split, clean_text
+
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 def audio_to_dataframe(audios: list[Audio]) -> pd.DataFrame:
@@ -66,6 +71,7 @@ def vtt_split_to_dataframe(
         raise ValueError("dataframe_path should be a parquet file.")
     if not subtitle_folder.is_dir():
         raise ValueError("subtitle_folder should be a path to a folder.")
+    logging.info("Start splitting subtitle files into segments.")
     audios = folder_vtt_split(
         vtt_folder=subtitle_folder,
         min_duration=min_duration,
@@ -74,14 +80,47 @@ def vtt_split_to_dataframe(
         source=source,
     )
     df = audio_to_dataframe(audios)
+    logging.info("Converting audio segments to dataframe.")
     if clean_segment_text:
+        logging.info("Cleaning text.")
         df["segment_text"] = df["segment_text"].apply(clean_text)
     df.source = pd.Categorical(df.source)
+    df.audio_filename = df.audio_filename.apply(lambda x: x.replace(".ar", ""))
+    df.segment_filename = df.segment_filename.apply(lambda x: x.replace(".ar", ""))
+    logging.info("Saving dataframe to parquet file.")
     df.to_parquet(dataframe_path)
     return df
 
 
+def validate_dataframe(
+    df: pd.DataFrame, min_duration: float = 6.0, max_duration: float = 16.0
+) -> pd.Series:
+    """
+    validate dataframe segments duration
+    ensure that the duration between min_duration and max_duration
+    Args:
+        df: dataframe
+        min_duration: minimum duration
+        max_duration: maximum duration
+    Returns:
+        Series describing the segment duration
+    """
+    if df.segment_duration.min() < min_duration:
+        raise ValueError(f"min duration is {df.segment_duration.min()}")
+    if df.segment_duration.max() > max_duration:
+        raise ValueError(f"max duration is {df.segment_duration.max()}")
+    return df.segment_duration.describe()
+
+
 if __name__ == "__main__":
-    subtitle_folder = Path("/root/datasets/masc/train/subtitles/")
-    dataframe_path = Path("train.parquet")
-    df = vtt_split_to_dataframe(subtitle_folder, dataframe_path)
+    subtitle_folder = Path("/root/datasets/masc/")
+    for subset in subtitle_folder.glob("*"):
+        if not subset.is_dir():
+            logging.warning(f"{subset} is not a directory")
+            continue
+        logging.info(f"processing {subset.name}...")
+        dataframe_path = Path(f"{subset.name}.parquet")
+        subset_folder = subset / "subtitles"
+        df = vtt_split_to_dataframe(subset_folder, dataframe_path)
+        logging.info(f"validating {subset.name}...")
+        print(validate_dataframe(df, min_duration=6.0, max_duration=16.0))
