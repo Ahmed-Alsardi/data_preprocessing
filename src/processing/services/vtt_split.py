@@ -1,8 +1,28 @@
 from pathlib import Path
+from typing import Optional, Tuple
 import webvtt
 from tqdm import tqdm
 from processing.config import Audio, AudioSegment, SourceEnum
 
+
+def _get_first_segment(
+    caption: webvtt.Caption, filename: str, max_duration=16.0, source=SourceEnum.MASC
+) -> Tuple[Optional[AudioSegment], bool]:
+    caption_duration = caption.end_in_seconds - caption.start_in_seconds
+    if caption_duration <= max_duration:
+        current_segment = AudioSegment(
+            start=caption.start_in_seconds,
+            end=caption.end_in_seconds,
+            text=caption.text,
+            source=source,
+            filename=f"{filename}_0",
+        )
+        create_new_segment = False
+    else:
+        current_segment = None
+        create_new_segment = True
+    return current_segment, create_new_segment
+    
 
 def vtt_split(
     vtt_path: Path,
@@ -26,52 +46,75 @@ def vtt_split(
     vtt = webvtt.read(vtt_path)
     filename = vtt_path.stem
     segments = []
-    current_segment = AudioSegment(
-        start=vtt[0].start_in_seconds,
-        end=vtt[0].end_in_seconds,
-        text=vtt[0].text,
-        source=source,
-        filename=f"{filename}_{len(segments)}",
+    caption_duration = vtt[0].end_in_seconds - vtt[0].start_in_seconds
+    current_segment, create_new_segment = _get_first_segment(
+        vtt[0], filename, max_duration, source
     )
     for caption in vtt[1:]:
         caption_duration = caption.end_in_seconds - caption.start_in_seconds
-        if caption.start_in_seconds - current_segment.end > threshold:
+        if create_new_segment:
+            if caption_duration <= max_duration:
+                current_segment = AudioSegment(
+                    start=caption.start_in_seconds,
+                    end=caption.end_in_seconds,
+                    text=caption.text,
+                    source=source,
+                    filename=f"{filename}_{len(segments)}",
+                )
+                create_new_segment = False
+            continue
+        caption_difference = caption.start_in_seconds - current_segment.end
+        if caption_difference > threshold:
             # difference between current caption and previous caption is greater than threshold
             if current_segment.duration >= min_duration:
                 segments.append(current_segment)
-            current_segment = AudioSegment(
-                start=caption.start_in_seconds,
-                end=caption.end_in_seconds,
-                text=caption.text,
-                source=source,
-                filename=f"{filename}_{len(segments)}",
-            )
+            # check the caption duration is less than max_duration
+            if caption_duration <= max_duration:
+                current_segment = AudioSegment(
+                    start=caption.start_in_seconds,
+                    end=caption.end_in_seconds,
+                    text=caption.text,
+                    source=source,
+                    filename=f"{filename}_{len(segments)}",
+                )
+            else:
+                create_new_segment = True
             continue
-        if current_segment.duration + caption_duration <= max_duration:
+        # Add duration between the end of current segment and the start of the current caption
+        if (
+            current_segment.duration + caption_duration + caption_difference
+            <= max_duration
+        ):
             # current caption can be added to the segment
             current_segment.end = caption.end_in_seconds
             current_segment.text = f"{current_segment.text} {caption.text}"
         elif current_segment.duration >= min_duration:
             # current caption cannot be added to the segment
             segments.append(current_segment)
-            current_segment = AudioSegment(
-                start=caption.start_in_seconds,
-                end=caption.end_in_seconds,
-                text=caption.text,
-                source=source,
-                filename=f"{filename}_{len(segments)}",
-            )
+            if caption_duration <= max_duration:
+                current_segment = AudioSegment(
+                    start=caption.start_in_seconds,
+                    end=caption.end_in_seconds,
+                    text=caption.text,
+                    source=source,
+                    filename=f"{filename}_{len(segments)}",
+                )
+            else:
+                create_new_segment = True
         else:
             # current caption cannot be added to the segment bc it's big and current segment is too short
             # skip the current caption and start a new segment
-            current_segment = AudioSegment(
-                start=caption.start_in_seconds,
-                end=caption.end_in_seconds,
-                text=caption.text,
-                source=source,
-                filename=f"{filename}_{len(segments)}",
-            )
-    if current_segment.duration >= min_duration:
+            if caption_duration <= max_duration:
+                current_segment = AudioSegment(
+                    start=caption.start_in_seconds,
+                    end=caption.end_in_seconds,
+                    text=caption.text,
+                    source=source,
+                    filename=f"{filename}_{len(segments)}",
+                )
+            else:
+                create_new_segment = True
+    if current_segment and current_segment.duration >= min_duration:
         segments.append(current_segment)
     audio = Audio(
         filename=filename,
@@ -119,8 +162,3 @@ def folder_vtt_split(
             )
 
     return audios
-
-
-if __name__ == "__main__":
-    vtt_path = Path("/root/datasets/masc/train/subtitles/frrRoqxg67k.ar.vtt")
-    audio = vtt_split(vtt_path=vtt_path)
