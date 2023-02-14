@@ -1,5 +1,6 @@
 from pathlib import Path
 import webvtt
+from tqdm import tqdm
 from processing.config import Audio, AudioSegment, SourceEnum
 
 
@@ -90,16 +91,26 @@ def folder_vtt_split(
     Returns:
         list of Audio objects
     """
-    audios = [
-        vtt_split(
-            vtt_path=vtt_path,
-            min_duration=min_duration,
-            max_duration=max_duration,
-            threshold=threshold,
-            source=source,
-        )
-        for vtt_path in vtt_folder.glob("*")
-        if vtt_path.suffix == ".vtt"
-    ]
+    # audios = tqdm([
+    #     vtt_split(
+    #         vtt_path=vtt_path,
+    #         min_duration=min_duration,
+    #         max_duration=max_duration,
+    #         threshold=threshold,
+    #         source=source,
+    #     )
+    #     for vtt_path in vtt_folder.glob("*")
+    #     if vtt_path.suffix == ".vtt"
+    # ], desc="Splitting vtt files into segments", total=len(list(vtt_folder.glob("*")))
+    audios = []
+    for vtt_path in tqdm(vtt_folder.glob("*"), desc="Splitting vtt files into segments", total=len(list(vtt_folder.glob("*")))):
+        if vtt_path.suffix == ".vtt":
+            audios.append(vtt_split(
+                vtt_path=vtt_path,
+                min_duration=min_duration,
+                max_duration=max_duration,
+                threshold=threshold,
+                source=source,
+            ))
 
     return audios
