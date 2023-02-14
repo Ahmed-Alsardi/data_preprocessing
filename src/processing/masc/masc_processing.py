@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+import webvtt
 from processing.config import Audio, AudioSegment, SourceEnum
 from processing.services import folder_vtt_split, clean_text
 
@@ -33,9 +34,9 @@ def audio_to_dataframe(audios: list[Audio]) -> pd.DataFrame:
 
 
 def vtt_split_to_dataframe(
-    subtitle_folder: Path, 
-    dataframe_path: Path, 
-    clean_text: bool = True,
+    subtitle_folder: Path,
+    dataframe_path: Path,
+    clean_segment_text: bool = True,
     min_duration=6.0,
     max_duration=16.0,
     threshold=2.0,
@@ -61,7 +62,7 @@ def vtt_split_to_dataframe(
     """
     if dataframe_path.is_dir():
         raise ValueError("dataframe_path should be a path to a file.")
-    if dataframe_path.stem != "parquet":
+    if dataframe_path.suffix != ".parquet":
         raise ValueError("dataframe_path should be a parquet file.")
     if not subtitle_folder.is_dir():
         raise ValueError("subtitle_folder should be a path to a folder.")
@@ -73,9 +74,14 @@ def vtt_split_to_dataframe(
         source=source,
     )
     df = audio_to_dataframe(audios)
-    if clean_text:
+    if clean_segment_text:
         df["segment_text"] = df["segment_text"].apply(clean_text)
+    df.source = pd.Categorical(df.source)
     df.to_parquet(dataframe_path)
     return df
 
 
+if __name__ == "__main__":
+    subtitle_folder = Path("/root/datasets/masc/train/subtitles/")
+    dataframe_path = Path("train.parquet")
+    df = vtt_split_to_dataframe(subtitle_folder, dataframe_path)
