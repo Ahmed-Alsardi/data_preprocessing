@@ -1,12 +1,15 @@
+from itertools import repeat
 from pathlib import Path
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 import logging
 import pandas as pd
 from processing.config import Audio, SourceEnum
-from processing.services import folder_vtt_split, clean_text
+from processing.services import folder_vtt_split, clean_text, split_audio_to_segments
 
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
@@ -112,9 +115,34 @@ def validate_dataframe(
     return df.segment_duration.describe()
 
 
-if __name__ == "__main__":
-    subtitle_folder = Path("/root/datasets/masc/")
-    for subset in subtitle_folder.glob("*"):
+def split_subset_to_audio(
+    df: pd.DataFrame,
+    subset_audio_folder: Path,
+    subset_output_folder: Path,
+    audio_extension: str = "wav",
+) -> None:
+    """
+    split audio files into segments, grouped by audio_filename
+    Args:
+        df: dataframe
+        subset_audio_folder: path to audio files
+        subset_output_folder: path to output folder
+    """
+    df = df.groupby("audio_filename")
+    total_audios = len(df)
+    logging.info(f"total audios: {total_audios}")
+    inputs = zip(
+        [segment for _, segment in df],
+        repeat(subset_audio_folder, total_audios),
+        repeat(subset_output_folder, total_audios),
+    )
+    with Pool(cpu_count()) as pool:
+        tqdm(pool.imap_unordered(split_audio_to_segments, inputs), total=total_audios)
+
+
+def masc_subtitle_to_dataframe():
+    masc_folder = Path("/root/datasets/masc/")
+    for subset in masc_folder.glob("*"):
         if not subset.is_dir():
             logging.warning(f"{subset} is not a directory")
             continue
@@ -124,3 +152,17 @@ if __name__ == "__main__":
         df = vtt_split_to_dataframe(subset_folder, dataframe_path)
         logging.info(f"validating {subset.name}...")
         print(validate_dataframe(df, min_duration=6.0, max_duration=16.0))
+
+
+if __name__ == "__main__":
+    masc_folder = Path("/root/datasets/masc/")
+    for subset in masc_folder.glob("*"):
+        if not subset.is_dir():
+            logging.warning(f"{subset} is not a directory")
+            continue
+        logging.info(f"processing {subset.name}...")
+        dataframe = pd.read_parquet(f"{subset.name}.parquet")
+        subset_folder = subset / "audios"
+        subset_output = subset / "segments"
+        subset_output.mkdir(exist_ok=True)
+        split_subset_to_audio(dataframe, subset_folder, subset_output)
