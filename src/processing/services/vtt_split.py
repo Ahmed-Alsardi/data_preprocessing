@@ -5,11 +5,23 @@ from processing.config import Audio, AudioSegment, SourceEnum
 
 def vtt_split(
     vtt_path: Path,
-    min_duration: float = 8.0,
-    max_duration: float = 12.0,
+    min_duration: float = 6.0,
+    max_duration: float = 16.0,
     threshold: float = 2.0,
     source: SourceEnum = SourceEnum.MASC,
 ) -> Audio:
+    """
+    Split a vtt file into audio segments
+
+    Args:
+        vtt_path: path to vtt file
+        min_duration: minimum duration of a segment
+        max_duration: maximum duration of a segment
+        threshold: threshold for splitting segments
+        source: source of the audio
+    Returns:
+        Audio object
+    """
     vtt = webvtt.read(vtt_path)
     filename = vtt_path.stem
     segments = []
@@ -57,3 +69,37 @@ def vtt_split(
         source=source,
     )
     return audio
+
+
+def folder_vtt_split(
+    vtt_folder: Path,
+    min_duration: float = 6.0,
+    max_duration: float = 16.0,
+    threshold: float = 2.0,
+    source: SourceEnum = SourceEnum.MASC,
+) -> list[Audio]:
+    """
+    Split a folder of vtt files into audio segments
+
+    Args:
+        vtt_folder: path to folder of vtt files
+        min_duration: minimum duration of a segment
+        max_duration: maximum duration of a segment
+        threshold: threshold for splitting segments
+        source: source of the audio
+    Returns:
+        list of Audio objects
+    """
+    audios = [
+        vtt_split(
+            vtt_path=vtt_path,
+            min_duration=min_duration,
+            max_duration=max_duration,
+            threshold=threshold,
+            source=source,
+        )
+        for vtt_path in vtt_folder.glob("*")
+        if vtt_path.suffix == ".vtt"
+    ]
+
+    return audios
