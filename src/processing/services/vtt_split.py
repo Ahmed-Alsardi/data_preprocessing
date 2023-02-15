@@ -22,7 +22,7 @@ def _get_first_segment(
         current_segment = None
         create_new_segment = True
     return current_segment, create_new_segment
-    
+
 
 def vtt_split(
     vtt_path: Path,

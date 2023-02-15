@@ -1,6 +1,4 @@
-from itertools import repeat
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import logging
 import pandas as pd
