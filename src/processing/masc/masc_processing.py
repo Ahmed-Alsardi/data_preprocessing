@@ -131,13 +131,17 @@ def split_subset_to_audio(
     df = df.groupby("audio_filename")
     total_audios = len(df)
     logging.info(f"total audios: {total_audios}")
-    inputs = zip(
-        [segment for _, segment in df],
-        repeat(subset_audio_folder, total_audios),
-        repeat(subset_output_folder, total_audios),
-    )
-    with Pool(cpu_count()) as pool:
-        tqdm(pool.imap_unordered(split_audio_to_segments, inputs), total=total_audios)
+    for audio_name, audio_segments in tqdm(df, total=total_audios):
+        audio_path = subset_audio_folder / f"{audio_name}.{audio_extension}"
+        if not audio_path.is_file():
+            logging.warning(f"{audio_path} is not a file")
+            continue
+        split_audio_to_segments(
+            audio=audio_path,
+            audio_segments=audio_segments,
+            output_dir=subset_output_folder,
+            extension=audio_extension,
+        )
 
 
 def masc_subtitle_to_dataframe():

@@ -42,27 +42,13 @@ def _split_audio(
 
 
 def split_audio_to_segments(
-    data: Tuple[Union[Path, PydubAudioSegment], pd.DataFrame, Path],
+    audio: Union[Path, PydubAudioSegment],
+    audio_segments: pd.DataFrame,
+    output_dir: Path,
     extension: str = "mp3",
-    input_extension: str = "wav",
 ) -> int:
-    """
-    Split an audio file to multiple segments.
-    Args:
-        data: tuple containing the following:
-            - audio: audio file path or AudioSegment object, if audio path, audio_dir must be provided.
-            - audio_segments: pandas dataframe with the following columns:
-            - audio_dir: audio directory, if audio is a path, this must be provided.
-            - output_dir: output directory to save the new audio files.
-        extension: audio file extension.
-    Returns:
-        number of segments created.
-    """
     total = 0
-    print(data)
-    audio_segments, audio_dir, output_dir = data
-    if isinstance(audio, (str, Path)):
-        audio = audio_dir / f"{audio_segments.audio_filename}.{input_extension}"
+    if isinstance(audio, Path):
         if not audio.exists():
             logger.error("Audio file %s does not exist.", audio)
             raise FileNotFoundError(f"Audio file {audio} does not exist.")
@@ -70,3 +56,15 @@ def split_audio_to_segments(
     for _, series_segments in audio_segments.iterrows():
         total += _split_audio(audio, series_segments, output_dir, extension)
     return total
+    # total = 0
+    # audio_segments, audio_dir, output_dir = data
+    # # if isinstance(audio, (str, Path)):
+    # audio = audio_dir / f"{audio_segments.audio_filename.values[0]}.{input_extension}"
+    # if not audio.exists():
+    #     logger.error("Audio file %s does not exist.", audio)
+    #     raise FileNotFoundError(f"Audio file {audio} does not exist.")
+    # audio = PydubAudioSegment.from_wav(audio)
+    # for _, series_segments in audio_segments.iterrows():
+    #     print(series_segments)
+    #     total += _split_audio(audio, series_segments, output_dir, extension)
+    # return total
