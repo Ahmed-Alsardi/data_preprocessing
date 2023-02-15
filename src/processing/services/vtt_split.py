@@ -5,10 +5,16 @@ from tqdm import tqdm
 from processing.config import Audio, AudioSegment, SourceEnum
 
 
+MIN_CAPTION_DURATION = 0.75
+MAX_CAPTION_DURATION = 11.0
+
+
 def _get_first_segment(
     caption: webvtt.Caption, filename: str, max_duration=16.0, source=SourceEnum.MASC
 ) -> Tuple[Optional[AudioSegment], bool]:
     caption_duration = caption.end_in_seconds - caption.start_in_seconds
+    if caption_duration > MAX_CAPTION_DURATION or caption_duration < MIN_CAPTION_DURATION:
+        return None, True
     if caption_duration <= max_duration:
         current_segment = AudioSegment(
             start=caption.start_in_seconds,
@@ -52,6 +58,8 @@ def vtt_split(
     )
     for caption in vtt[1:]:
         caption_duration = caption.end_in_seconds - caption.start_in_seconds
+        if caption_duration > MAX_CAPTION_DURATION or caption_duration < MIN_CAPTION_DURATION:
+            continue
         if create_new_segment:
             if caption_duration <= max_duration:
                 current_segment = AudioSegment(
