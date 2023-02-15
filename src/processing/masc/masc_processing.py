@@ -41,7 +41,6 @@ def audio_to_dataframe(audios: list[Audio]) -> pd.DataFrame:
 
 def vtt_split_to_dataframe(
     subtitle_folder: Path,
-    dataframe_path: Path,
     clean_segment_text: bool = True,
     min_duration=6.0,
     max_duration=16.0,
@@ -66,10 +65,6 @@ def vtt_split_to_dataframe(
     Returns:
         dataframe
     """
-    if dataframe_path.is_dir():
-        raise ValueError("dataframe_path should be a path to a file.")
-    if dataframe_path.suffix != ".parquet":
-        raise ValueError("dataframe_path should be a parquet file.")
     if not subtitle_folder.is_dir():
         raise ValueError("subtitle_folder should be a path to a folder.")
     logging.info("Start splitting subtitle files into segments.")
@@ -88,21 +83,25 @@ def vtt_split_to_dataframe(
     df.source = pd.Categorical(df.source)
     df.audio_filename = df.audio_filename.apply(lambda x: x.replace(".ar", ""))
     df.segment_filename = df.segment_filename.apply(lambda x: x.replace(".ar", ""))
-    logging.info("Saving dataframe to parquet file.")
-    df.to_parquet(dataframe_path)
     return df
 
 
 def validate_dataframe(
-    df: pd.DataFrame, min_duration: float = 6.0, max_duration: float = 16.0
+    df: pd.DataFrame,
+    dataframe_path: Path,
+    min_duration: float = 6.0,
+    max_duration: float = 16.0,
+    remove_duplication: bool = True,
 ) -> pd.Series:
     """
     validate dataframe segments duration
     ensure that the duration between min_duration and max_duration
     Args:
         df: dataframe
+        dataframe_path: path to dataframe
         min_duration: minimum duration
         max_duration: maximum duration
+        remove_duplication: remove duplication
     Returns:
         Series describing the segment duration
     """
@@ -110,7 +109,15 @@ def validate_dataframe(
         raise ValueError(f"min duration is {df.segment_duration.min()}")
     if df.segment_duration.max() > max_duration:
         raise ValueError(f"max duration is {df.segment_duration.max()}")
-    return df.segment_duration.describe()
+    if dataframe_path.is_dir():
+        raise ValueError("dataframe_path should be a path to a file.")
+    if dataframe_path.suffix != ".parquet":
+        raise ValueError("dataframe_path should be a parquet file.")
+    if remove_duplication:
+        df = df.drop_duplicates()
+    logging.info("Saving dataframe to parquet file.")
+    df.to_parquet(dataframe_path)
+    return df
 
 
 def split_subset_to_audio(
@@ -151,12 +158,15 @@ def masc_subtitle_to_dataframe():
         logging.info(f"processing {subset.name}...")
         dataframe_path = Path(f"{subset.name}.parquet")
         subset_folder = subset / "subtitles"
-        df = vtt_split_to_dataframe(subset_folder, dataframe_path)
+        df = vtt_split_to_dataframe(subset_folder)
         logging.info(f"validating {subset.name}...")
-        print(validate_dataframe(df, min_duration=6.0, max_duration=16.0))
+        df = validate_dataframe(
+            df=df, dataframe_path=dataframe_path, min_duration=6.0, max_duration=16.0
+        )
+        logging.info(df.segment_duration.describe())
 
 
-if __name__ == "__main__":
+def masc_dataframe_to_audio():
     masc_folder = Path("/root/datasets/masc/")
     for subset in masc_folder.glob("*"):
         if not subset.is_dir():
@@ -168,3 +178,8 @@ if __name__ == "__main__":
         subset_output = subset / "segments"
         subset_output.mkdir(exist_ok=True)
         split_subset_to_audio(dataframe, subset_folder, subset_output)
+
+
+if __name__ == "__main__":
+    # masc_subtitle_to_dataframe()
+    masc_dataframe_to_audio()
